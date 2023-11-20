@@ -14,4 +14,6 @@ pip install cmake
 pip install pybullet
 pip install gymnasium[box2d]
 pip install stable-baselines3[extras]
+pip install tensor
+pip install tensorboard
 ```
