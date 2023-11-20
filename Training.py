@@ -17,7 +17,7 @@ class SaveOnBestTrainingRewardCallback(BaseCallback):
     based on the training reward (in practice, we recommend using ``EvalCallback``).
 
     :param check_freq:
-    :param log_dir: Path to the folder where the model will be saved.
+    :param log_dir: Path to the folder where the model will be saved. 
       It must contains the file created by the ``Monitor`` wrapper.
     :param verbose: Verbosity level: 0 for no output, 1 for info messages, 2 for debug messages
     """
@@ -86,7 +86,7 @@ def main():
   # #----------------------------- LEARNING -----------------------------------------------#
   print("Started Training")
   callback = SaveOnBestTrainingRewardCallback(check_freq=1000, log_dir = log_dir)
-  model.learn(total_timesteps=10000, callback=callback, tb_log_name= "PPO_Cnn_100_deault")  # O nome é algoritmo_Policy_timesteps_learning rate
+  model.learn(total_timesteps=500000, callback =callback, tb_log_name= "PPO_Cnn_100_deault")  # O nome é algoritmo_Policy_timesteps_learning rate
   model.save(env_id)
   print("Finished Training")
   #----------------------------- Finished LEARNING -----------------------------------------------#
