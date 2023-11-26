@@ -1,15 +1,22 @@
 import gymnasium as gym
+from gymnasium.spaces import Box
 import numpy as np
+import os
 
 from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import SubprocVecEnv
 from stable_baselines3.common.results_plotter import load_results, ts2xy
 from stable_baselines3.common.utils import set_random_seed
 from stable_baselines3.common.callbacks import BaseCallback
-from stable_baselines3.common.vec_env import VecMonitor
-from stable_baselines3.common.atari_wrappers import MaxAndSkipEnv
+from stable_baselines3.common.vec_env import VecMonitor, VecVideoRecorder
+from gymnasium.wrappers import FrameStack, ResizeObservation, GrayScaleObservation, RecordVideo
+from stable_baselines3.common.atari_wrappers import (
+    MaxAndSkipEnv,
+    WarpFrame,
+    NoopResetEnv
+   )
 
-import os
+import torch
 
 class SaveOnBestTrainingRewardCallback(BaseCallback):
     """
@@ -55,38 +62,51 @@ class SaveOnBestTrainingRewardCallback(BaseCallback):
 
         return True
 
-def make_env(env_id, rank, seed = 0):
+def make_env(env_id, rank, capture_video = False, seed = 0, run_name='Random'):
     def _init():
-        env = gym.make(env_id, domain_randomize=False, continuous=False)
-        env = MaxAndSkipEnv(env, 4)
+        env = gym.make(env_id, domain_randomize=False, continuous=False, render_mode='rgb_array')     # TODO: try with multidiscrete action
+
+        if capture_video:
+          if rank == 0:
+            print("Video setup")
+            env = RecordVideo(env, f"videos/{run_name}")
+
+        # env = NoopResetEnv(env, noop_max = 30)
+        env = MaxAndSkipEnv(env, 4)    # Only iterates the environment every 4 frames. Also fuses together last 2 to remove sprites and unique features
+        # env = ResizeObservation(env, [84, 84])
+        env = GrayScaleObservation(env, keep_dim=True)   # True for Cnn
+        # env = FrameStack(env,num_stack=4, lz4_compress=False)   # cant run with cnn policy
+
         env.reset(seed=(seed+rank))
         return env
 
     set_random_seed(seed)
     return _init
 
-
+# In 150k steps, we should already have around 400 reward
 def main():
-  log_dir="tmp/" # Directory para o log
+  # Do not change log directory
+  run_name = "PPO_Cpu_Cnn_500k_0-0003_Grey"  # Try with 0.0003
+  # run_name = "test"
+  log_dir= "tmp/monitor/"+run_name ## SAME DIRECTORY FOR MONITOR AND BEST MODEL!!
 
-  os.makedirs(log_dir, exist_ok=True) #Se não existir cria
+  os.makedirs(log_dir, exist_ok=True) # Dirctory to save model
+  os.makedirs(log_dir + run_name, exist_ok=True)  # Saves best model somewhere else
 
   env_id = "CarRacing-v2"
   num_cpu = 4
 
-  env = VecMonitor(SubprocVecEnv([make_env(env_id, i) for i in range(num_cpu)]), "tmp/monitor")
-
-
-  #env = gym.make("CarRacing-v2", render_mode="human", domain_randomize=False, continuous=False)
-
-  model = PPO("CnnPolicy", env, verbose=1, tensorboard_log="./board/")
-  #model = PPO.load("", env=env)
-
+  env = VecMonitor(SubprocVecEnv([make_env(env_id, i, run_name=run_name, capture_video=True) for i in range(num_cpu)]), log_dir)
+  # ent_coef in atari - 0.01
+  model = PPO("CnnPolicy", env, verbose=1, learning_rate=0.0003, ent_coef=0.000,tensorboard_log="./board/")
+  # model = PPO.load("tmp/best_model.zip", env=env, print_system_info=True)  
+  # model.set_parameters(load_path_or_dict="tmp/best_model.zip")
+  print("Observation Space: ", env.observation_space.shape)
 
   # #----------------------------- LEARNING -----------------------------------------------#
   print("Started Training")
   callback = SaveOnBestTrainingRewardCallback(check_freq=1000, log_dir = log_dir)
-  model.learn(total_timesteps=500000, callback =callback, tb_log_name= "PPO_Cnn_100_deault")  # O nome é algoritmo_Policy_timesteps_learning rate
+  model.learn(total_timesteps=500000, callback = callback, tb_log_name= run_name)  # O nome é algoritmo_Policy_timesteps_learning rate
   model.save(env_id)
   print("Finished Training")
   #----------------------------- Finished LEARNING -----------------------------------------------#

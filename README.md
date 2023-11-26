@@ -17,3 +17,8 @@ pip install stable-baselines3[extras]
 pip install tensor
 pip install tensorboard
 ```
+
+### Todo's
+ - Add FrameStack
+ - Add GPU
+ - Add entropy value
