@@ -64,7 +64,7 @@ class SaveOnBestTrainingRewardCallback(BaseCallback):
 
 def make_env(env_id, rank, capture_video = False, seed = 0, run_name='Random'):
     def _init():
-        env = gym.make(env_id, domain_randomize=False, continuous=False, render_mode='rgb_array')     # TODO: try with multidiscrete action
+        env = gym.make(env_id, domain_randomize=False, continuous=False, render_mode='rgb_array')
 
         if capture_video:
           if rank == 0:
@@ -72,10 +72,10 @@ def make_env(env_id, rank, capture_video = False, seed = 0, run_name='Random'):
             env = RecordVideo(env, f"videos/{run_name}")
 
         # env = NoopResetEnv(env, noop_max = 30)
-        env = MaxAndSkipEnv(env, 4)    # Only iterates the environment every 4 frames. Also fuses together last 2 to remove sprites and unique features
-        # env = ResizeObservation(env, [84, 84])
+        env = MaxAndSkipEnv(env, 4)    # Only iterates the environment every 4 frames. Fuses together the last 2 to remove unique features
+        env = ResizeObservation(env, [84, 84])  # Resizes the Frame
         env = GrayScaleObservation(env, keep_dim=True)   # True for Cnn
-        # env = FrameStack(env,num_stack=4, lz4_compress=False)   # cant run with cnn policy
+        # env = FrameStack(env,num_stack=4, lz4_compress=False)   # Can't run with cnn policy
 
         env.reset(seed=(seed+rank))
         return env
@@ -86,7 +86,7 @@ def make_env(env_id, rank, capture_video = False, seed = 0, run_name='Random'):
 # In 150k steps, we should already have around 400 reward
 def main():
   # Do not change log directory
-  run_name = "PPO_Cpu_Cnn_500k_0-0003_Grey"  # Try with 0.0003
+  run_name = "PPO_Cnn_600k_0-0003_Grey_Resized_ent"  # Try with 0.0003
   # run_name = "test"
   log_dir= "tmp/monitor/"+run_name ## SAME DIRECTORY FOR MONITOR AND BEST MODEL!!
 
@@ -94,19 +94,19 @@ def main():
   os.makedirs(log_dir + run_name, exist_ok=True)  # Saves best model somewhere else
 
   env_id = "CarRacing-v2"
-  num_cpu = 4
+  num_cpu = 6
 
   env = VecMonitor(SubprocVecEnv([make_env(env_id, i, run_name=run_name, capture_video=True) for i in range(num_cpu)]), log_dir)
   # ent_coef in atari - 0.01
-  model = PPO("CnnPolicy", env, verbose=1, learning_rate=0.0003, ent_coef=0.000,tensorboard_log="./board/")
-  # model = PPO.load("tmp/best_model.zip", env=env, print_system_info=True)  
+  model = PPO("CnnPolicy", env, verbose=1, learning_rate=0.0003 ,ent_coef=0.01,tensorboard_log="./board/")
+  # model = PPO.load("tmp\monitor\PPO_Cnn_600k_0-0003_Grey_ent_0_01_2nd/best_model.zip", env=env, print_system_info=True)  
   # model.set_parameters(load_path_or_dict="tmp/best_model.zip")
   print("Observation Space: ", env.observation_space.shape)
 
   # #----------------------------- LEARNING -----------------------------------------------#
   print("Started Training")
-  callback = SaveOnBestTrainingRewardCallback(check_freq=1000, log_dir = log_dir)
-  model.learn(total_timesteps=500000, callback = callback, tb_log_name= run_name)  # O nome é algoritmo_Policy_timesteps_learning rate
+  callback = SaveOnBestTrainingRewardCallback(check_freq=2000, log_dir = log_dir)
+  model.learn(total_timesteps=600000, callback = callback, tb_log_name= run_name)  # O nome é algoritmo_Policy_timesteps_learning rate
   model.save(env_id)
   print("Finished Training")
   #----------------------------- Finished LEARNING -----------------------------------------------#
