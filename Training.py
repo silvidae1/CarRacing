@@ -62,7 +62,7 @@ class SaveOnBestTrainingRewardCallback(BaseCallback):
 
         return True
 
-def make_env(env_id, rank, capture_video = False, seed = 0, run_name='Random'):
+def make_env(env_id, rank, capture_video = True, seed = 0, run_name='Random'):
     def _init():
         env = gym.make(env_id, domain_randomize=False, continuous=False, render_mode='rgb_array')
 
@@ -85,28 +85,30 @@ def make_env(env_id, rank, capture_video = False, seed = 0, run_name='Random'):
 
 # In 150k steps, we should already have around 400 reward
 def main():
-  # Do not change log directory
-  run_name = "PPO_Cnn_500k_0-0003_Grey_ent_0_001_2nd"  # Try with 0.0003
+  # Specify run name to save logs
+  run_name = "PPO_Cnn_500k_0-0003_Grey_ent_0_001_3rd"
   # run_name = "test"
-  log_dir= "tmp/monitor/"+run_name ## SAME DIRECTORY FOR MONITOR AND BEST MODEL!!
 
-  os.makedirs(log_dir, exist_ok=True) # Dirctory to save model
+  # Same directory for monitor and best model!
+  log_dir= "tmp/monitor/" + run_name 
+
+  os.makedirs(log_dir, exist_ok=True) # Directory to save model
   os.makedirs(log_dir + run_name, exist_ok=True)  # Saves best model somewhere else
 
   env_id = "CarRacing-v2"
   num_cpu = 4
 
-  env = VecMonitor(SubprocVecEnv([make_env(env_id, i, run_name=run_name, capture_video=True) for i in range(num_cpu)]), log_dir)
+  env = VecMonitor(SubprocVecEnv([make_env(env_id, i, run_name=run_name) for i in range(num_cpu)]), log_dir)
   # ent_coef in atari - 0.01
-  # model = PPO("CnnPolicy", env, verbose=1, learning_rate=0.0003 ,ent_coef=0.001,tensorboard_log="./board/")
-  model = PPO.load("tmp\monitor\PPO_Cnn_500k_0-0003_Grey_ent_0_001/best_model.zip", env=env, print_system_info=True)  
-  # model.set_parameters(load_path_or_dict="tmp/best_model.zip")
+  model = PPO("CnnPolicy", env, verbose=1, learning_rate=0.0003 ,ent_coef=0.001,tensorboard_log="./board/")
+  # model = PPO.load("tmp\monitor\PPO_Cnn_500k_0-0003_Grey_ent_0_001/best_model.zip", env=env, print_system_info=True)  
+
   print("Observation Space: ", env.observation_space.shape)
 
   # #----------------------------- LEARNING -----------------------------------------------#
   print("Started Training")
   callback = SaveOnBestTrainingRewardCallback(check_freq=1000, log_dir = log_dir)
-  model.learn(total_timesteps=500000, callback = callback, tb_log_name= run_name)  # O nome é algoritmo_Policy_timesteps_learning rate
+  model.learn(total_timesteps=600000, callback = callback, tb_log_name= run_name)
   model.save(env_id)
   print("Finished Training")
   #----------------------------- Finished LEARNING -----------------------------------------------#

@@ -14,19 +14,13 @@ def main():
     # env = ResizeObservation(env, [84, 84])
     env = GrayScaleObservation(env, keep_dim=True)
 
-    # Remove the black zone from pixel 84 to 95 (last)
-
-
     obs = env.reset()
     obs = obs[0]
-    for i in range(obs.shape[0]):
-        print(obs[i][0],  i)
     terminated = False
 
     print("-------- Running ---------")
     while not terminated:
         action, state = model.predict(obs)
-        #action = env.action_space.sample()
         obs, reward, terminated, truncated, info = env.step(action)
         env.render()
 
