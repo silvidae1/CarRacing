@@ -17,4 +17,5 @@ pip install tensorboard
 pip install gymnasium[box2d]
 pip install stable-baselines3[extras]
 pip install opencv-contrib-python
+pip install moviepy
 

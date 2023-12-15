@@ -24,21 +24,24 @@ Before doing the following commands, make sure to:
  - Have python 3.8.10 version installed
 
 Assuming you are running on windows, these commands should be used on *git bash*. 
+You can just run the script *create_env.bash*:
+```Shell
+source env/Scripts/activate
+```
+
+Or run the commands manually:
+
 ```Shell
 python -m venv env
 source env/Scripts/activate
 pip install swig
 pip install cmake
+cmake ffmpeg freeglut3-dev xvfb x11-utils
 pip install pybullet
 pip install tensor
 pip install tensorboard
 pip install gymnasium[box2d]
 pip install stable-baselines3[extras]
 pip install opencv-contrib-python
+pip install moviepy
 ```
-
-
-### Todo's
- - Add FrameStack
- - Add GPU
- - Add entropy value

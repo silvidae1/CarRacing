@@ -86,8 +86,8 @@ def make_env(env_id, rank, capture_video = True, seed = 0, run_name='Random'):
 # In 150k steps, we should already have around 400 reward
 def main():
   # Specify run name to save logs
-  run_name = "PPO_Cnn_500k_0-0003_Grey_ent_0_001_3rd"
-  # run_name = "test"
+  # run_name = "PPO_Cnn_500k_0-0003_Grey_ent_0_001_3rd"
+  run_name = "test"
 
   # Same directory for monitor and best model!
   log_dir= "tmp/monitor/" + run_name 
