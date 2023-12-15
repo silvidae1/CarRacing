@@ -1,11 +1,9 @@
 python_version=$(python -c 'import platform; print(platform.python_version())')
 
-if [[ $python_version == 3* ]]; then
-    echo "Python 3 is installed"
-elif [[ $python_version == 2* ]]; then
-    echo "Python 2 is installed"
+if [[ $python_version == 3.8.10 ]]; then
+    echo "Python 3.8.10 is installed"
 else
-    echo "Python is not installed or could not determine the version"
+    echo "Should have Python 3.8.10 installed but let's still try it"
 fi
 
 python -m venv env
@@ -14,7 +12,9 @@ pip install swig
 pip install cmake
 cmake ffmpeg freeglut3-dev xvfb x11-utils
 pip install pybullet
-pip install gymnasium[box2d]
-pip install stable-baselines3[extras]
 pip install tensor
 pip install tensorboard
+pip install gymnasium[box2d]
+pip install stable-baselines3[extras]
+pip install opencv-contrib-python
+
